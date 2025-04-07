@@ -18,6 +18,8 @@ let game;
 let powerFood = getRandomFood();
 let powerFoodTimer = 0;
 
+let leaderboard = JSON.parse(localStorage.getItem('snakeLeaderboard')) || [];
+
 function getRandomFood() {
   return {
     x: Math.floor(Math.random() * 20) * box,
@@ -84,8 +86,9 @@ function drawBackgroundSnake(snakeArr, f, pf) {
 }
 
 function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   if (!gameStarted) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
@@ -93,9 +96,6 @@ function draw() {
     return;
   }
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Move snake
   let snakeX = snake[0].x;
   let snakeY = snake[0].y;
 
@@ -160,9 +160,33 @@ function draw() {
   drawBackgroundSnake(snake, food, powerFood);
 }
 
+draw();
+
 function gameOver() {
   clearInterval(game);
   isDead = true;
+  let nickname = prompt("Enter your 3-letter nickname:", "AAA");
+  nickname = (nickname && nickname.trim().length > 0 ? nickname.toUpperCase().slice(0, 3) : "AAA");
+  leaderboard.push({ name: nickname, score });
+
+  // Clean up invalid entries
+  leaderboard = leaderboard.filter(entry => entry && entry.name && typeof entry.score === 'number');
+
+  leaderboard.sort((a, b) => b.score - a.score);
+  leaderboard = leaderboard.slice(0, 5);
+  localStorage.setItem('snakeLeaderboard', JSON.stringify(leaderboard));
+
   document.getElementById("finalScore").innerText = "Score: " + score;
   document.getElementById("deathScreen").style.display = "block";
+  updateLeaderboardUI();
+}
+
+function updateLeaderboardUI() {
+  const list = document.getElementById("leaderboardList");
+  list.innerHTML = "";
+  leaderboard.forEach((entry, index) => {
+    const li = document.createElement("li");
+    li.textContent = `#${index + 1}: ${entry.name} - ${entry.score}`;
+    list.appendChild(li);
+  });
 }
